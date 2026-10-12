@@ -1,0 +1,385 @@
+:root {
+  --u: 1vh;
+  --body-hi: #8b6cca;
+  --body-lo: #5c3c9a;
+  --bezel: #2c1d4a;
+  --lcd-bg: #c6d2b1;
+  --lcd-bg2: #b3c19c;
+  --lcd-ink: #1d2817;
+  --lcd-dim: rgba(29, 40, 23, 0.16);
+  --key: #fbf9ff;
+  --key-ink: #3b2a63;
+  --key-edge: #b7a5dc;
+  --add: #ff6f8e;
+  --sub: #3f97f5;
+  --mul: #33b56c;
+  --div: #f59a2e;
+  --ok: #ff7d33;
+  --mini: #ffd84a;
+  --time: #8ce0ff;
+  --lamp-off: #3a2766;
+  --blue: #39a6ff;
+  --red: #ff4545;
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+
+@supports (height: 1dvh) {
+  :root { --u: 1dvh; }
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #3b2763;
+  overscroll-behavior: none;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.device {
+  height: 100vh;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, calc(var(--u) * 1.3), 12px);
+  padding:
+    calc(env(safe-area-inset-top) + clamp(6px, calc(var(--u) * 1.2), 12px))
+    calc(env(safe-area-inset-right) + 14px)
+    calc(env(safe-area-inset-bottom) + clamp(8px, calc(var(--u) * 1.8), 18px))
+    calc(env(safe-area-inset-left) + 14px);
+  background:
+    radial-gradient(120% 60% at 20% 0%, rgba(255, 255, 255, 0.18), transparent 60%),
+    linear-gradient(170deg, var(--body-hi), var(--body-lo));
+}
+
+/* PC で開いたときは本体らしく中央に置く */
+@media (min-width: 520px) and (min-height: 700px) {
+  .device {
+    height: min(100dvh - 40px, 860px);
+    max-width: 420px;
+    margin-top: 20px;
+    border-radius: 40px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* ---- 上部：ロゴ・採点ライト・音 ---- */
+.top {
+  flex: 0 0 auto;
+  height: clamp(30px, calc(var(--u) * 5.4), 44px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.brand {
+  color: #fff;
+  font-weight: 900;
+  font-size: clamp(15px, calc(var(--u) * 2.7), 19px);
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.brand span {
+  margin-left: 2px;
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+
+.lamps {
+  display: flex;
+  gap: 12px;
+}
+
+.lamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.lamp i {
+  width: clamp(16px, calc(var(--u) * 2.8), 22px);
+  height: clamp(16px, calc(var(--u) * 2.8), 22px);
+  border-radius: 50%;
+  background: var(--lamp-off);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: background 0.08s, box-shadow 0.08s;
+}
+
+.lamp small {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.lamp-ok.on i {
+  background: radial-gradient(circle at 35% 35%, #d5ecff, var(--blue) 55%);
+  box-shadow: 0 0 14px 5px rgba(57, 166, 255, 0.85);
+}
+
+.lamp-ng.on i {
+  background: radial-gradient(circle at 35% 35%, #ffd6d6, var(--red) 55%);
+  box-shadow: 0 0 14px 5px rgba(255, 69, 69, 0.85);
+}
+
+.lamp.blink i {
+  animation: lamp-blink 0.32s steps(1) 6;
+}
+
+@keyframes lamp-blink {
+  0% {
+    background: radial-gradient(circle at 35% 35%, #d5ecff, var(--blue) 55%);
+    box-shadow: 0 0 14px 5px rgba(57, 166, 255, 0.85);
+  }
+  50% {
+    background: var(--lamp-off);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.sound-btn {
+  width: clamp(34px, calc(var(--u) * 5.4), 42px);
+  height: clamp(30px, calc(var(--u) * 4.8), 38px);
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: clamp(16px, calc(var(--u) * 2.8), 20px);
+  padding: 0;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.sound-btn.off {
+  opacity: 0.55;
+}
+
+/* ---- 液晶画面 ---- */
+.lcd {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(6px, calc(var(--u) * 1.2), 12px) 12px clamp(6px, calc(var(--u) * 1.2), 10px);
+  border: 6px solid var(--bezel);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--lcd-bg), var(--lcd-bg2));
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.28), 0 2px 0 rgba(255, 255, 255, 0.25);
+  color: var(--lcd-ink);
+  overflow: hidden;
+}
+
+.lcd-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: clamp(12px, calc(var(--u) * 2.1), 15px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lcd-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700;
+  font-size: clamp(24px, min(9vw, calc(var(--u) * 6.4)), 46px);
+  white-space: pre;
+  line-height: 1.1;
+}
+
+.lcd-main.text {
+  font-family: inherit;
+  font-size: clamp(20px, min(7vw, calc(var(--u) * 4.6)), 32px);
+}
+
+.lcd-main.memo {
+  letter-spacing: 0.12em;
+  font-size: clamp(28px, min(10.5vw, calc(var(--u) * 7.2)), 52px);
+}
+
+.ans {
+  display: inline-block;
+  min-width: 1.3em;
+  padding: 0 0.08em;
+  border-bottom: 3px solid var(--lcd-ink);
+  text-align: center;
+}
+
+.ans.typing::after {
+  content: "";
+  display: inline-block;
+  width: 0.08em;
+  height: 0.85em;
+  margin-left: 0.04em;
+  background: var(--lcd-ink);
+  vertical-align: -0.05em;
+  animation: caret 1s steps(1) infinite;
+}
+
+.ans.wrong {
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+  opacity: 0.55;
+}
+
+@keyframes caret {
+  50% { opacity: 0; }
+}
+
+.lcd-sub {
+  min-height: 1.35em;
+  text-align: center;
+  font-weight: 800;
+  font-size: clamp(14px, calc(var(--u) * 2.6), 19px);
+}
+
+.lcd-hint {
+  min-height: 1.4em;
+  text-align: center;
+  font-weight: 700;
+  font-size: clamp(11px, calc(var(--u) * 1.9), 13px);
+  opacity: 0.72;
+}
+
+.lcd-bar {
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 3px;
+  background: var(--lcd-dim);
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.lcd-bar.show {
+  visibility: visible;
+}
+
+.lcd-bar i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--lcd-ink);
+}
+
+
+/* ---- キー ---- */
+.key {
+  border: 0;
+  border-radius: 14px;
+  background: var(--key);
+  color: var(--key-ink);
+  font-family: inherit;
+  font-weight: 800;
+  box-shadow: 0 4px 0 var(--key-edge), 0 6px 8px rgba(0, 0, 0, 0.18);
+  touch-action: manipulation;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.04s, box-shadow 0.04s;
+}
+
+.key.pressed {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--key-edge), 0 2px 3px rgba(0, 0, 0, 0.18);
+}
+
+.row {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 10px;
+}
+
+.ops {
+  grid-template-columns: repeat(4, 1fr);
+  height: clamp(40px, calc(var(--u) * 7.4), 56px);
+}
+
+.op {
+  color: #fff;
+  font-size: clamp(24px, calc(var(--u) * 4.6), 34px);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.op-add { background: var(--add); --key-edge: #c84462; }
+.op-sub { background: var(--sub); --key-edge: #1f68b8; }
+.op-mul { background: var(--mul); --key-edge: #1c7d47; }
+.op-div { background: var(--div); --key-edge: #b56a12; }
+
+.op.active {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.funcs {
+  grid-template-columns: 1fr 1fr;
+  height: clamp(34px, calc(var(--u) * 6), 46px);
+}
+
+.fn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  font-size: clamp(12px, calc(var(--u) * 2.1), 15px);
+}
+
+.fn small {
+  font-size: 0.78em;
+  opacity: 0.8;
+}
+
+.fn-mini { background: var(--mini); --key-edge: #c7a515; }
+.fn-time { background: var(--time); --key-edge: #4aa6c7; }
+
+.fn.active {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.pad {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: clamp(40px, calc(var(--u) * 8.2), 62px);
+  gap: clamp(7px, calc(var(--u) * 1.3), 11px) 10px;
+  padding-bottom: 4px;
+}
+
+.num {
+  font-size: clamp(22px, calc(var(--u) * 4.2), 32px);
+  font-family: ui-rounded, "Hiragino Maru Gothic ProN", inherit;
+}
+
+.clr {
+  background: #ddd5ec;
+  --key-edge: #a597c4;
+  font-size: clamp(12px, calc(var(--u) * 2.2), 16px);
+}
+
+.ok {
+  background: var(--ok);
+  --key-edge: #c25212;
+  color: #fff;
+  font-size: clamp(20px, calc(var(--u) * 3.8), 28px);
+}

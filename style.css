@@ -1,25 +1,27 @@
 :root {
   --u: 1vh;
-  --body-hi: #8b6cca;
-  --body-lo: #5c3c9a;
-  --bezel: #2c1d4a;
-  --lcd-bg: #c6d2b1;
-  --lcd-bg2: #b3c19c;
-  --lcd-ink: #1d2817;
-  --lcd-dim: rgba(29, 40, 23, 0.16);
-  --key: #fbf9ff;
-  --key-ink: #3b2a63;
-  --key-edge: #b7a5dc;
-  --add: #ff6f8e;
-  --sub: #3f97f5;
-  --mul: #33b56c;
-  --div: #f59a2e;
-  --ok: #ff7d33;
-  --mini: #ffd84a;
-  --time: #8ce0ff;
-  --lamp-off: #3a2766;
-  --blue: #39a6ff;
-  --red: #ff4545;
+  --page: #2a1c46;
+  --body-hi: #8f70cf;
+  --body-lo: #5f3f9d;
+  --bezel: #a58bd8;
+  --lcd-bg: #c8cbc2;
+  --lcd-bg2: #b6b9af;
+  --lcd-ink: #1b1f1a;
+  --lcd-dim: rgba(27, 31, 26, 0.16);
+  --lime: #bcd63c;
+  --lime-edge: #7f9a1d;
+  --blue: #2366b0;
+  --face: #f3f7fa;
+  --face-edge: #9fb3c6;
+  --key: #fdfdff;
+  --key-edge: #b3a3d6;
+  --light-off: #ece7f6;
+  --light-ok: #45adff;
+  --light-ng: #ff4747;
+  --side: #4a2f80;
+  /* 十字キー 1 マスと数字キーの高さ（画面の高さに合わせて伸び縮みする） */
+  --cell: clamp(34px, calc(var(--u) * 6.4), 50px);
+  --keyh: clamp(32px, calc(var(--u) * 6.4), 50px);
   font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
 }
 
@@ -38,7 +40,7 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: #3b2763;
+  background: var(--page);
   overscroll-behavior: none;
 }
 
@@ -48,151 +50,162 @@ body {
   overflow: hidden;
 }
 
+button {
+  font-family: inherit;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
 .device {
   height: 100vh;
   height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(6px, calc(var(--u) * 1.3), 12px);
   padding:
-    calc(env(safe-area-inset-top) + clamp(6px, calc(var(--u) * 1.2), 12px))
-    calc(env(safe-area-inset-right) + 14px)
-    calc(env(safe-area-inset-bottom) + clamp(8px, calc(var(--u) * 1.8), 18px))
-    calc(env(safe-area-inset-left) + 14px);
-  background:
-    radial-gradient(120% 60% at 20% 0%, rgba(255, 255, 255, 0.18), transparent 60%),
-    linear-gradient(170deg, var(--body-hi), var(--body-lo));
+    calc(env(safe-area-inset-top) + 8px)
+    calc(env(safe-area-inset-right) + 16px)
+    calc(env(safe-area-inset-bottom) + 8px)
+    calc(env(safe-area-inset-left) + 16px);
 }
 
 /* PC で開いたときは本体らしく中央に置く */
 @media (min-width: 520px) and (min-height: 700px) {
   .device {
-    height: min(100dvh - 40px, 860px);
+    height: min(100dvh, 860px);
     max-width: 420px;
-    margin-top: 20px;
-    border-radius: 40px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.25);
+    padding-top: 20px;
+    padding-bottom: 20px;
   }
 }
 
-/* ---- 上部：ロゴ・採点ライト・音 ---- */
-.top {
-  flex: 0 0 auto;
-  height: clamp(30px, calc(var(--u) * 5.4), 44px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.brand {
-  color: #fff;
-  font-weight: 900;
-  font-size: clamp(15px, calc(var(--u) * 2.7), 19px);
-  letter-spacing: 0.04em;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
-  white-space: nowrap;
-}
-
-.brand span {
-  margin-left: 2px;
-  font-size: 0.8em;
-  opacity: 0.85;
-}
-
-.lamps {
-  display: flex;
-  gap: 12px;
-}
-
-.lamp {
+/* ---- 本体 ---- */
+.shell {
+  position: relative;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  padding: clamp(10px, calc(var(--u) * 2), 16px) clamp(12px, 4vw, 18px) clamp(12px, calc(var(--u) * 2.4), 20px);
+  border-radius: 46px 46px 38px 38px;
+  background:
+    radial-gradient(120% 50% at 25% 0%, rgba(255, 255, 255, 0.2), transparent 60%),
+    linear-gradient(175deg, var(--body-hi), var(--body-lo));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3), inset 0 -3px 0 rgba(0, 0, 0, 0.18), 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- 側面：タイムアタック（左）・電源スイッチ（右） ---- */
+.side-time {
+  position: absolute;
+  z-index: 2;
+  left: -14px;
+  top: 37%;
+  width: 22px;
+  height: clamp(46px, calc(var(--u) * 9), 64px);
+  border-radius: 8px 0 0 8px;
+  background: linear-gradient(90deg, #6d4bb0, var(--side));
+  box-shadow: inset 2px 0 0 rgba(255, 255, 255, 0.25), -2px 2px 0 rgba(0, 0, 0, 0.25);
+  display: flex;
   align-items: center;
-  gap: 2px;
+  justify-content: flex-start;
+  padding-left: 2px;
 }
 
-.lamp i {
-  width: clamp(16px, calc(var(--u) * 2.8), 22px);
-  height: clamp(16px, calc(var(--u) * 2.8), 22px);
-  border-radius: 50%;
-  background: var(--lamp-off);
-  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.25);
-  transition: background 0.08s, box-shadow 0.08s;
+.side-time svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
 }
 
-.lamp small {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 9px;
-  font-weight: 700;
+.side-time.active {
+  background: linear-gradient(90deg, #ffb13d, #e08a10);
 }
 
-.lamp-ok.on i {
-  background: radial-gradient(circle at 35% 35%, #d5ecff, var(--blue) 55%);
-  box-shadow: 0 0 14px 5px rgba(57, 166, 255, 0.85);
+.side-power {
+  --pos-h: clamp(24px, calc(var(--u) * 4.4), 32px);
+  position: absolute;
+  z-index: 2;
+  right: -14px;
+  top: 30%;
+  width: 24px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(270deg, #6d4bb0, var(--side));
+  box-shadow: inset -2px 0 0 rgba(255, 255, 255, 0.25), 2px 2px 0 rgba(0, 0, 0, 0.25);
 }
 
-.lamp-ng.on i {
-  background: radial-gradient(circle at 35% 35%, #ffd6d6, var(--red) 55%);
-  box-shadow: 0 0 14px 5px rgba(255, 69, 69, 0.85);
+.side-power button {
+  position: relative;
+  z-index: 1;
+  height: var(--pos-h);
+  background: transparent;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
 }
 
-.lamp.blink i {
-  animation: lamp-blink 0.32s steps(1) 6;
+.side-power button[data-key="pow-off"] {
+  font-size: 8px;
+  font-weight: 800;
 }
 
-@keyframes lamp-blink {
-  0% {
-    background: radial-gradient(circle at 35% 35%, #d5ecff, var(--blue) 55%);
-    box-shadow: 0 0 14px 5px rgba(57, 166, 255, 0.85);
-  }
-  50% {
-    background: var(--lamp-off);
-    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5);
-  }
+.side-power .knob {
+  position: absolute;
+  left: 2px;
+  right: 3px;
+  top: 0;
+  height: var(--pos-h);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  transition: transform 0.12s;
 }
 
-.sound-btn {
-  width: clamp(34px, calc(var(--u) * 5.4), 42px);
-  height: clamp(30px, calc(var(--u) * 4.8), 38px);
-  border: 0;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.18);
-  font-size: clamp(16px, calc(var(--u) * 2.8), 20px);
-  padding: 0;
-  touch-action: manipulation;
-  cursor: pointer;
-}
-
-.sound-btn.off {
-  opacity: 0.55;
-}
+.side-power[data-pos="mute"] .knob { transform: translateY(100%); }
+.side-power[data-pos="off"] .knob { transform: translateY(200%); }
 
 /* ---- 液晶画面 ---- */
-.lcd {
-  position: relative;
+.bezel {
   flex: 1 1 auto;
   min-height: 0;
+  padding: clamp(7px, calc(var(--u) * 1.4), 11px);
+  border-radius: 38px 38px 22px 22px;
+  background: linear-gradient(180deg, var(--bezel), #8e72c6);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 3px 0 rgba(0, 0, 0, 0.15);
+}
+
+.lcd {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: clamp(6px, calc(var(--u) * 1.2), 12px) 12px clamp(6px, calc(var(--u) * 1.2), 10px);
-  border: 6px solid var(--bezel);
-  border-radius: 16px;
+  padding: clamp(6px, calc(var(--u) * 1.2), 10px) 12px clamp(6px, calc(var(--u) * 1.2), 10px);
+  border-radius: 28px 28px 14px 14px;
   background: linear-gradient(180deg, var(--lcd-bg), var(--lcd-bg2));
-  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.28), 0 2px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.3);
   color: var(--lcd-ink);
   overflow: hidden;
 }
 
 .lcd-status {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: clamp(12px, calc(var(--u) * 2.1), 15px);
-  font-weight: 700;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: clamp(11px, calc(var(--u) * 2), 14px);
+  font-weight: 800;
   white-space: nowrap;
+}
+
+#lcd-prog {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+#lcd-time {
+  text-align: right;
 }
 
 .lcd-main {
@@ -203,19 +216,19 @@ body {
   justify-content: center;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-weight: 700;
-  font-size: clamp(24px, min(9vw, calc(var(--u) * 6.4)), 46px);
+  font-size: clamp(22px, min(8.6vw, calc(var(--u) * 6.2)), 44px);
   white-space: pre;
   line-height: 1.1;
 }
 
 .lcd-main.text {
   font-family: inherit;
-  font-size: clamp(20px, min(7vw, calc(var(--u) * 4.6)), 32px);
+  font-size: clamp(18px, min(6.6vw, calc(var(--u) * 4.4)), 30px);
 }
 
 .lcd-main.memo {
-  letter-spacing: 0.12em;
-  font-size: clamp(28px, min(10.5vw, calc(var(--u) * 7.2)), 52px);
+  letter-spacing: 0.14em;
+  font-size: clamp(26px, min(10vw, calc(var(--u) * 7)), 50px);
 }
 
 .ans {
@@ -251,20 +264,20 @@ body {
   min-height: 1.35em;
   text-align: center;
   font-weight: 800;
-  font-size: clamp(14px, calc(var(--u) * 2.6), 19px);
+  font-size: clamp(13px, calc(var(--u) * 2.4), 18px);
 }
 
 .lcd-hint {
   min-height: 1.4em;
   text-align: center;
   font-weight: 700;
-  font-size: clamp(11px, calc(var(--u) * 1.9), 13px);
+  font-size: clamp(10px, calc(var(--u) * 1.8), 13px);
   opacity: 0.72;
 }
 
 .lcd-bar {
-  height: 6px;
-  margin-top: 4px;
+  height: 5px;
+  margin: 3px 6px 0;
   border-radius: 3px;
   background: var(--lcd-dim);
   overflow: hidden;
@@ -282,104 +295,189 @@ body {
   background: var(--lcd-ink);
 }
 
-
-/* ---- キー ---- */
-.key {
-  border: 0;
-  border-radius: 14px;
-  background: var(--key);
-  color: var(--key-ink);
-  font-family: inherit;
-  font-weight: 800;
-  box-shadow: 0 4px 0 var(--key-edge), 0 6px 8px rgba(0, 0, 0, 0.18);
-  touch-action: manipulation;
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.04s, box-shadow 0.04s;
-}
-
-.key.pressed {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--key-edge), 0 2px 3px rgba(0, 0, 0, 0.18);
-}
-
-.row {
+/* ---- 採点ライト（画面の下の横長ライト） ---- */
+.score-light {
   flex: 0 0 auto;
-  display: grid;
-  gap: 10px;
+  align-self: center;
+  width: 46%;
+  height: clamp(9px, calc(var(--u) * 1.6), 13px);
+  margin: clamp(8px, calc(var(--u) * 1.7), 15px) 0;
+  border-radius: 99px;
+  background: var(--light-off);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: background 0.08s, box-shadow 0.08s;
 }
 
-.ops {
-  grid-template-columns: repeat(4, 1fr);
-  height: clamp(40px, calc(var(--u) * 7.4), 56px);
+.score-light.ok {
+  background: var(--light-ok);
+  box-shadow: 0 0 16px 6px rgba(69, 173, 255, 0.85);
 }
 
-.op {
-  color: #fff;
-  font-size: clamp(24px, calc(var(--u) * 4.6), 34px);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+.score-light.ng {
+  background: var(--light-ng);
+  box-shadow: 0 0 16px 6px rgba(255, 71, 71, 0.85);
 }
 
-.op-add { background: var(--add); --key-edge: #c84462; }
-.op-sub { background: var(--sub); --key-edge: #1f68b8; }
-.op-mul { background: var(--mul); --key-edge: #1c7d47; }
-.op-div { background: var(--div); --key-edge: #b56a12; }
-
-.op.active {
-  outline: 3px solid #fff;
-  outline-offset: 2px;
+.score-light.blink {
+  animation: light-blink 0.32s steps(1) 6;
 }
 
-.funcs {
-  grid-template-columns: 1fr 1fr;
-  height: clamp(34px, calc(var(--u) * 6), 46px);
+@keyframes light-blink {
+  0% {
+    background: var(--light-ok);
+    box-shadow: 0 0 16px 6px rgba(69, 173, 255, 0.85);
+  }
+  50% {
+    background: var(--light-off);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.25);
+  }
 }
 
-.fn {
+/* ---- 中段：十字キー（左）・OK と取り消し（右） ---- */
+.controls {
+  flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3% 0 5%;
+}
+
+.cross {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, var(--cell));
+  grid-template-rows: repeat(3, var(--cell));
+  gap: 3px;
+}
+
+.cross::before {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+
+.ck {
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1.1;
-  font-size: clamp(12px, calc(var(--u) * 2.1), 15px);
+  background: var(--lime);
+  color: var(--blue);
+  font-size: calc(var(--cell) * 0.62);
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 3px 0 var(--lime-edge);
 }
 
-.fn small {
-  font-size: 0.78em;
-  opacity: 0.8;
+.ck-add { grid-area: 1 / 2; border-radius: 46% 46% 7px 7px; }
+.ck-sub { grid-area: 2 / 1; border-radius: 46% 7px 7px 46%; }
+.ck-mini { grid-area: 2 / 2; border-radius: 7px; }
+.ck-div { grid-area: 2 / 3; border-radius: 7px 46% 46% 7px; }
+.ck-mul { grid-area: 3 / 2; border-radius: 7px 7px 46% 46%; }
+
+.ck-mini svg {
+  width: 62%;
+  height: 62%;
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
 }
 
-.fn-mini { background: var(--mini); --key-edge: #c7a515; }
-.fn-time { background: var(--time); --key-edge: #4aa6c7; }
-
-.fn.active {
-  outline: 3px solid #fff;
-  outline-offset: 2px;
+.okarea {
+  position: relative;
+  width: calc(var(--cell) * 3);
+  height: calc(var(--cell) * 3);
 }
 
+.ok-btn {
+  position: absolute;
+  left: 0;
+  bottom: 2%;
+  width: calc(var(--cell) * 2.2);
+  height: calc(var(--cell) * 2.2);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffffff, var(--face) 55%, #dbe6ef);
+  color: var(--blue);
+  font-size: calc(var(--cell) * 0.66);
+  font-weight: 900;
+  box-shadow: 0 4px 0 var(--face-edge), 0 0 0 6px rgba(255, 255, 255, 0.2), 0 0 0 7px rgba(0, 0, 0, 0.1);
+}
+
+.ok-btn::before {
+  content: "";
+  position: absolute;
+  inset: 11%;
+  border-radius: 50%;
+  border: 3px dashed var(--blue);
+  pointer-events: none;
+}
+
+.clr-btn {
+  position: absolute;
+  right: 0;
+  top: 2%;
+  width: calc(var(--cell) * 0.98);
+  height: calc(var(--cell) * 0.98);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffffff, var(--face) 55%, #dbe6ef);
+  box-shadow: 0 3px 0 var(--face-edge), 0 0 0 5px rgba(255, 255, 255, 0.2), 0 0 0 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clr-btn svg {
+  width: 56%;
+  height: 56%;
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- 下段：数字キー ---- */
 .pad {
   flex: 0 0 auto;
+  align-self: center;
+  width: min(100%, calc(var(--keyh) * 5.6));
+  margin-top: clamp(8px, calc(var(--u) * 1.6), 14px);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: clamp(40px, calc(var(--u) * 8.2), 62px);
-  gap: clamp(7px, calc(var(--u) * 1.3), 11px) 10px;
-  padding-bottom: 4px;
+  grid-auto-rows: var(--keyh);
+  gap: clamp(6px, calc(var(--u) * 1.1), 9px) clamp(10px, 3.4vw, 16px);
 }
 
 .num {
-  font-size: clamp(22px, calc(var(--u) * 4.2), 32px);
+  border-radius: 12px;
+  background: var(--key);
+  color: var(--blue);
+  font-size: calc(var(--keyh) * 0.64);
+  font-weight: 900;
   font-family: ui-rounded, "Hiragino Maru Gothic ProN", inherit;
+  box-shadow: inset 0 0 0 2px #2f3a66, 0 3px 0 var(--key-edge);
 }
 
-.clr {
-  background: #ddd5ec;
-  --key-edge: #a597c4;
-  font-size: clamp(12px, calc(var(--u) * 2.2), 16px);
+.num-0 {
+  grid-column: 2;
 }
 
-.ok {
-  background: var(--ok);
-  --key-edge: #c25212;
-  color: #fff;
-  font-size: clamp(20px, calc(var(--u) * 3.8), 28px);
+/* ---- 押したとき ---- */
+[data-key] {
+  transition: transform 0.04s;
 }
+
+[data-key].pressed {
+  transform: translateY(2px);
+}
+
+.ck.pressed { box-shadow: 0 1px 0 var(--lime-edge); }
+.num.pressed { box-shadow: inset 0 0 0 2px #2f3a66, 0 1px 0 var(--key-edge); }
+.ok-btn.pressed { box-shadow: 0 1px 0 var(--face-edge), 0 0 0 6px rgba(255, 255, 255, 0.2), 0 0 0 7px rgba(0, 0, 0, 0.1); }
+.clr-btn.pressed { box-shadow: 0 1px 0 var(--face-edge), 0 0 0 5px rgba(255, 255, 255, 0.2), 0 0 0 6px rgba(0, 0, 0, 0.1); }
+.side-time.pressed { transform: translateX(3px); }
+.side-power [data-key].pressed { transform: none; }

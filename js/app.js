@@ -7,19 +7,20 @@ import { sfx, unlock, setEnabled } from './sound.js';
 const $ = (id) => document.getElementById(id);
 const el = {
   mode: $('lcd-mode'),
-  info: $('lcd-info'),
+  prog: $('lcd-prog'),
+  time: $('lcd-time'),
   main: $('lcd-main'),
   sub: $('lcd-sub'),
   hint: $('lcd-hint'),
   bar: $('lcd-bar'),
-  lampOk: $('lamp-ok'),
-  lampNg: $('lamp-ng'),
-  sound: $('btn-sound'),
-  timeLabel: $('time-label'),
+  light: $('score-light'),
+  power: $('power'),
+  timeBtn: document.querySelector('[data-key="time"]'),
 };
 const keyEls = [...document.querySelectorAll('[data-key]')];
 
 const MODE_KEYS = ['add', 'sub', 'mul', 'div', 'mini'];
+const POWER_KEYS = { 'pow-on': 'on', 'pow-mute': 'mute', 'pow-off': 'off' };
 const MODE_NAME = { add: 'たしざん', sub: 'ひきざん', mul: 'かけざん', div: 'わりざん', mini: 'ミニゲーム' };
 const OP_CHAR = { add: '＋', sub: '－', div: '÷' };
 const LEVEL_DESC = {
@@ -40,14 +41,14 @@ const MAX_INPUT = 3;
 const STORE_KEY = 'anzan-drill-settings';
 
 const S = {
-  phase: 'idle', // idle | select | memorize | question | feedback | result
+  phase: 'idle', // off | idle | select | memorize | question | feedback | result
   mode: null,
   level: 1,
   kukuMenu: 'order',
   dan: null,
   mini: 'anki',
   timeLimit: 0,
-  sound: true,
+  power: 'on', // 電源スイッチ：on（音あり）| mute（音なし）| off
   problems: [],
   idx: 0,
   input: '',
@@ -63,7 +64,8 @@ const S = {
 // ---- 設定の保存 ----
 function save() {
   try {
-    const { mode, level, kukuMenu, mini, timeLimit, sound } = S;
+    const { mode, level, kukuMenu, mini, timeLimit } = S;
+    const sound = S.power !== 'mute';
     localStorage.setItem(STORE_KEY, JSON.stringify({ mode, level, kukuMenu, mini, timeLimit, sound }));
   } catch {
     // 保存できない環境では無視する
@@ -79,7 +81,7 @@ function load() {
     if (KUKU_MENUS.includes(v.kukuMenu)) S.kukuMenu = v.kukuMenu;
     if (MINI_GAMES.includes(v.mini)) S.mini = v.mini;
     if (TIME_STEPS.includes(v.timeLimit)) S.timeLimit = v.timeLimit;
-    if (typeof v.sound === 'boolean') S.sound = v.sound;
+    if (v.sound === false) S.power = 'mute';
     if (S.mode) S.phase = 'select';
   } catch {
     // 壊れた値は無視する
@@ -139,9 +141,14 @@ function countdown(ms, { onSecond, onEnd }) {
   raf = requestAnimationFrame(step);
 }
 
-// ---- ライト ----
+// ---- 採点ライト ----
 function lightsOff() {
-  for (const lamp of [el.lampOk, el.lampNg]) lamp.classList.remove('on', 'blink');
+  el.light.classList.remove('ok', 'ng', 'blink');
+}
+
+function light(kind) {
+  lightsOff();
+  el.light.classList.add(kind);
 }
 
 function next(list, cur) {
@@ -154,7 +161,8 @@ const isSelecting = () => S.phase === 'select' || S.phase === 'idle';
 // ---- キー操作 ----
 function press(key) {
   S.notice = '';
-  if (key === 'sound') return toggleSound();
+  if (key in POWER_KEYS) return setPower(POWER_KEYS[key]);
+  if (S.phase === 'off') return;
   if (MODE_KEYS.includes(key)) return onMode(key);
   if (key === 'time') return onTime();
   if (/^\d$/.test(key)) return onDigit(key);
@@ -162,11 +170,29 @@ function press(key) {
   if (key === 'ok') return onOk();
 }
 
-function toggleSound() {
-  S.sound = !S.sound;
-  setEnabled(S.sound);
-  sfx.select();
-  save();
+// 電源スイッチ：音あり／音なし／OFF
+function setPower(pos) {
+  if (pos === S.power) return;
+  const wasOff = S.power === 'off';
+  S.power = pos;
+  setEnabled(pos === 'on');
+  if (pos === 'off') {
+    cancelTimers();
+    lightsOff();
+    setBar(null);
+    S.phase = 'off';
+  } else {
+    if (wasOff) {
+      // 電源を入れたら、前回えらんだモードの選択画面から
+      S.phase = S.mode ? 'select' : 'idle';
+      S.problems = [];
+      S.retry = false;
+      sfx.start();
+    } else {
+      sfx.select();
+    }
+    save();
+  }
   render();
 }
 
@@ -197,6 +223,7 @@ function onMode(m) {
 function onTime() {
   if (!isSelecting()) return;
   S.timeLimit = next(TIME_STEPS, S.timeLimit);
+  S.notice = S.timeLimit ? `じかんせいげん：1もん ${S.timeLimit}びょう` : 'じかんせいげん：なし';
   sfx.select();
   save();
   render();
@@ -336,12 +363,12 @@ function grade(timeout) {
   S.last = { ok, timeout };
   if (ok) {
     S.correct++;
-    el.lampOk.classList.add('on');
+    light('ok');
     sfx.correct();
     if (p.kind === 'anki' && !S.retry) S.ankiDigits = Math.min(ANKI_MAX_DIGITS, S.ankiDigits + 1);
   } else {
     S.wrong.push(p);
-    el.lampNg.classList.add('on');
+    light('ng');
     sfx.wrong();
   }
   S.phase = 'feedback';
@@ -358,7 +385,7 @@ function showResult() {
   setBar(null);
   S.phase = 'result';
   if (S.wrong.length === 0) {
-    el.lampOk.classList.add('blink');
+    el.light.classList.add('blink');
     sfx.fanfare();
   } else {
     sfx.finish();
@@ -369,21 +396,28 @@ function showResult() {
 // ---- 表示 ----
 function modeLabel() {
   if (!S.mode) return '';
-  if (S.mode === 'mul') return `かけざん ${KUKU_NAME[S.kukuMenu]}${S.dan ? ` ${S.dan}のだん` : ''}`;
+  if (S.mode === 'mul') return `${S.dan}のだん`;
   if (S.mode === 'mini') return MINI_NAME[S.mini];
-  return `${MODE_NAME[S.mode]} レベル${S.level}`;
+  return `${MODE_NAME[S.mode]}${S.level}`;
 }
 
+// 液晶の上の段：左にモード、まん中に問題番号、右に制限時間（実機と同じ並び）
 function renderStatus() {
-  el.mode.textContent = S.retry && ['memorize', 'question', 'feedback'].includes(S.phase) ? `もういちど！ ${modeLabel()}` : modeLabel();
-  let info = '';
+  const playing = ['memorize', 'question', 'feedback'].includes(S.phase);
+  let left = '';
+  let prog = '';
+  let time = '';
   if (isSelecting()) {
-    info = S.timeLimit ? `⏱${S.timeLimit}びょう` : '';
-  } else if (S.phase !== 'result') {
-    info = `${S.idx + 1}/${S.problems.length}`;
-    if (S.timeLimit && S.phase === 'question') info = `⏱${S.remainSec}  ${info}`;
+    left = S.mode ? MODE_NAME[S.mode] : '';
+    time = S.timeLimit ? `⏱${S.timeLimit}` : '';
+  } else if (S.phase !== 'off') {
+    left = S.retry && playing ? 'もういちど' : modeLabel();
+    if (playing) prog = `${S.idx + 1}/${S.problems.length}`;
+    if (S.timeLimit && playing) time = `⏱${S.phase === 'question' ? S.remainSec : S.timeLimit}`;
   }
-  el.info.textContent = info;
+  el.mode.textContent = left;
+  el.prog.textContent = prog;
+  el.time.textContent = time;
 }
 
 function setMain(className, text) {
@@ -402,22 +436,22 @@ function renderProblem(p, input, ansClass) {
 
 function render() {
   document.body.dataset.phase = S.phase;
-  for (const k of keyEls) {
-    const key = k.dataset.key;
-    if (MODE_KEYS.includes(key)) k.classList.toggle('active', S.mode === key);
-    if (key === 'time') k.classList.toggle('active', S.timeLimit > 0);
-  }
-  el.timeLabel.textContent = S.timeLimit ? `${S.timeLimit}びょう` : 'なし';
-  el.sound.textContent = S.sound ? '🔊' : '🔇';
-  el.sound.classList.toggle('off', !S.sound);
+  el.power.dataset.pos = S.power;
+  el.timeBtn.classList.toggle('active', S.timeLimit > 0 && S.phase !== 'off');
   renderStatus();
 
   const p = cur();
   switch (S.phase) {
+    case 'off':
+      setMain('', '');
+      el.sub.textContent = '';
+      el.hint.textContent = '';
+      break;
+
     case 'idle':
       setMain('text', 'モードを えらんでね');
-      el.sub.textContent = '＋ － × ÷ か ミニゲーム';
-      el.hint.textContent = S.notice || 'タイムアタックで じかんせいげん';
+      el.sub.textContent = '＋ － × ÷ か ✦（ミニゲーム）';
+      el.hint.textContent = S.notice || 'ひだり よこの ⏱ボタンで じかんせいげん';
       break;
 
     case 'select':
@@ -428,7 +462,7 @@ function render() {
       } else if (S.mode === 'mini') {
         setMain('text', MINI_NAME[S.mini]);
         el.sub.textContent = MINI_DESC[S.mini];
-        el.hint.textContent = S.notice || 'ミニゲームで かえる ・ OKで スタート';
+        el.hint.textContent = S.notice || '✦で かえる ・ OKで スタート';
       } else {
         setMain('text', `レベル ${S.level}`);
         el.sub.textContent = LEVEL_DESC[S.mode][S.level - 1];
@@ -466,7 +500,7 @@ function render() {
       setMain('text', `${Math.round((100 * S.correct) / n)} てん`);
       el.sub.textContent = `${n}もんの うち ${S.correct}もん せいかい${perfect ? '！' : ''}`;
       if (perfect) el.hint.textContent = S.retry ? 'ぜんぶ できたね！ OKで もどる' : 'ぜんもん せいかい！ OKで もどる';
-      else el.hint.textContent = 'OK：もういちど ／ ＋－×÷：やめる';
+      else el.hint.textContent = 'OK：もういちど ／ ＋－×÷✦：やめる';
       break;
     }
   }
@@ -499,11 +533,12 @@ document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: fal
 // PC で確かめるためのキーボード操作
 const KEYMAP = {
   Enter: 'ok', ' ': 'ok', Backspace: 'clear', Delete: 'clear', Escape: 'clear',
-  '+': 'add', '-': 'sub', '*': 'mul', x: 'mul', '/': 'div', g: 'mini', t: 'time', s: 'sound',
+  '+': 'add', '-': 'sub', '*': 'mul', x: 'mul', '/': 'div', g: 'mini', t: 'time',
 };
 document.addEventListener('keydown', (e) => {
   if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-  const key = /^\d$/.test(e.key) ? e.key : KEYMAP[e.key];
+  let key = /^\d$/.test(e.key) ? e.key : KEYMAP[e.key];
+  if (e.key === 's' && S.power !== 'off') key = S.power === 'mute' ? 'pow-on' : 'pow-mute';
   if (!key) return;
   e.preventDefault();
   unlock();
@@ -530,5 +565,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 }
 
 load();
-setEnabled(S.sound);
+setEnabled(S.power === 'on');
 render();

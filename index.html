@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#6a4aa8">
+  <meta name="theme-color" content="#2a1c46">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,51 +17,66 @@
 </head>
 <body>
   <main class="device">
-    <header class="top">
-      <div class="brand">あんざん<span>ドリル</span></div>
-      <div class="lamps" aria-hidden="true">
-        <div class="lamp lamp-ok" id="lamp-ok"><i></i><small>せいかい</small></div>
-        <div class="lamp lamp-ng" id="lamp-ng"><i></i><small>まちがい</small></div>
+    <div class="shell">
+      <!-- 左側面：タイムアタックボタン -->
+      <button class="side-time" data-key="time" aria-label="タイムアタック">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>
+      </button>
+
+      <!-- 右側面：電源スイッチ（音あり／音なし／OFF） -->
+      <div class="side-power" id="power" data-pos="on" role="group" aria-label="でんげん">
+        <i class="knob"></i>
+        <button data-key="pow-on" aria-label="おと あり">🔊</button>
+        <button data-key="pow-mute" aria-label="おと なし">🔇</button>
+        <button data-key="pow-off" aria-label="でんげん OFF">OFF</button>
       </div>
-      <button class="sound-btn" id="btn-sound" data-key="sound" aria-label="おと">🔊</button>
-    </header>
 
-    <section class="lcd" aria-live="polite">
-      <div class="lcd-status">
-        <span id="lcd-mode"></span>
-        <span id="lcd-info"></span>
+      <section class="bezel">
+        <div class="lcd" aria-live="polite">
+          <div class="lcd-status">
+            <span id="lcd-mode"></span>
+            <span id="lcd-prog"></span>
+            <span id="lcd-time"></span>
+          </div>
+          <div class="lcd-main" id="lcd-main"></div>
+          <div class="lcd-sub" id="lcd-sub"></div>
+          <div class="lcd-hint" id="lcd-hint"></div>
+          <div class="lcd-bar"><i id="lcd-bar"></i></div>
+        </div>
+      </section>
+
+      <div class="score-light" id="score-light" aria-hidden="true"></div>
+
+      <div class="controls">
+        <div class="cross">
+          <button class="ck ck-add" data-key="add" aria-label="たしざん">＋</button>
+          <button class="ck ck-sub" data-key="sub" aria-label="ひきざん">－</button>
+          <button class="ck ck-mini" data-key="mini" aria-label="ミニゲーム">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 15 9l6.5 3-6.5 3-3 6.5L9 15l-6.5-3L9 9z"/></svg>
+          </button>
+          <button class="ck ck-div" data-key="div" aria-label="わりざん">÷</button>
+          <button class="ck ck-mul" data-key="mul" aria-label="かけざん">×</button>
+        </div>
+        <div class="okarea">
+          <button class="ok-btn" data-key="ok"><span>OK</span></button>
+          <button class="clr-btn" data-key="clear" aria-label="とりけし">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 4 9l4 4"/><path d="M4 9h9.5a5.5 5.5 0 0 1 0 11H8"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="lcd-main" id="lcd-main"></div>
-      <div class="lcd-sub" id="lcd-sub"></div>
-      <div class="lcd-hint" id="lcd-hint"></div>
-      <div class="lcd-bar"><i id="lcd-bar"></i></div>
-    </section>
 
-    <div class="row ops">
-      <button class="key op op-add" data-key="add">＋</button>
-      <button class="key op op-sub" data-key="sub">－</button>
-      <button class="key op op-mul" data-key="mul">×</button>
-      <button class="key op op-div" data-key="div">÷</button>
-    </div>
-
-    <div class="row funcs">
-      <button class="key fn fn-mini" data-key="mini">ミニゲーム</button>
-      <button class="key fn fn-time" data-key="time">タイムアタック<small id="time-label">なし</small></button>
-    </div>
-
-    <div class="pad">
-      <button class="key num" data-key="7">7</button>
-      <button class="key num" data-key="8">8</button>
-      <button class="key num" data-key="9">9</button>
-      <button class="key num" data-key="4">4</button>
-      <button class="key num" data-key="5">5</button>
-      <button class="key num" data-key="6">6</button>
-      <button class="key num" data-key="1">1</button>
-      <button class="key num" data-key="2">2</button>
-      <button class="key num" data-key="3">3</button>
-      <button class="key clr" data-key="clear">とりけし</button>
-      <button class="key num" data-key="0">0</button>
-      <button class="key ok" data-key="ok">OK</button>
+      <div class="pad">
+        <button class="num" data-key="7">7</button>
+        <button class="num" data-key="8">8</button>
+        <button class="num" data-key="9">9</button>
+        <button class="num" data-key="4">4</button>
+        <button class="num" data-key="5">5</button>
+        <button class="num" data-key="6">6</button>
+        <button class="num" data-key="1">1</button>
+        <button class="num" data-key="2">2</button>
+        <button class="num" data-key="3">3</button>
+        <button class="num num-0" data-key="0">0</button>
+      </div>
     </div>
   </main>
   <script type="module" src="js/app.js"></script>

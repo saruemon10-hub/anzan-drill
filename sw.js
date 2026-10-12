@@ -1,5 +1,5 @@
 // オフライン用キャッシュ。ファイルを更新したら CACHE のバージョンを上げる。
-const CACHE = 'anzan-v1';
+const CACHE = 'anzan-v2';
 const ASSETS = [
   './',
   './index.html',

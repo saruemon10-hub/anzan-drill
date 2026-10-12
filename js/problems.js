@@ -4,7 +4,7 @@
 
 export const ARITH_COUNT = 20;
 export const KUKU_COUNT = 9;
-export const MINI_COUNT = 10;
+export const MINI_COUNT = 20;
 
 export const LEVELS = { add: 3, sub: 3, div: 2 };
 export const KUKU_MENUS = ['order', 'reverse', 'random'];
@@ -127,10 +127,12 @@ export function makeKisoku(rng = Math.random) {
   return { kind: 'kisoku', seq: seq.slice(0, 3), rule, before: `${seq[0]}  ${seq[1]}  ${seq[2]}  `, after: '', answer: String(seq[3]) };
 }
 
-// あわせて100：表示された数に、あといくつ足せば 100 になるか。
+// あわせて100：画面に出る 2 つの数に、あといくつ足せば 100 になるか（例：35 と 15 → 50）。
 export function makeAwase(rng = Math.random) {
-  const n = randInt(rng, 1, 99);
-  return { kind: 'awase', n, before: `${n} + `, after: ' = 100', answer: String(100 - n) };
+  const total = randInt(rng, 10, 99);
+  const a = randInt(rng, 1, total - 1);
+  const b = total - a;
+  return { kind: 'awase', a, b, before: `${a}  ${b}  `, after: '', answer: String(100 - total) };
 }
 
 export function generateMini(game, count = MINI_COUNT, rng = Math.random) {

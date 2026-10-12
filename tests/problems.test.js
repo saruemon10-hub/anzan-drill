@@ -159,13 +159,15 @@ test('きそくさがし：規則どおりの次の数、0 以上 999 以下', (
   assert.deepEqual([...rules].sort(), ['down', 'up', 'x2']);
 });
 
-test('あわせて100：表示した数 + 答え = 100', () => {
+test('あわせて100：2 つの数 + 答え = 100', () => {
   for (let seed = 1; seed <= RUNS; seed++) {
     const list = generateMini('awase', MINI_COUNT, seeded(seed));
+    assert.equal(list.length, MINI_COUNT);
     assert.equal(new Set(list.map(problemKey)).size, MINI_COUNT);
     for (const p of list) {
-      assert.ok(p.n >= 1 && p.n <= 99);
-      assert.equal(p.n + Number(p.answer), 100);
+      assert.ok(p.a >= 1 && p.b >= 1);
+      assert.ok(Number(p.answer) >= 1);
+      assert.equal(p.a + p.b + Number(p.answer), 100);
     }
   }
 });

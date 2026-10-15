@@ -43,6 +43,8 @@ const NG_VOICE_MS = 2100;
 const TIMEOUT_VOICE_MS = 2600;
 const MAX_INPUT = 3;
 const STORE_KEY = 'anzan-drill-settings';
+// 版数（sw.js の CACHE とそろえて上げる）。画面の右下に表示する
+const VERSION = '4';
 
 const S = {
   phase: 'idle', // off | idle | select | memorize | question | feedback | result
@@ -468,6 +470,11 @@ function renderProblem(p, input, ansClass) {
 
 function render() {
   document.body.dataset.phase = S.phase;
+  // 新しい版が届いていたら、問題を解いていないときに読み込み直す
+  if (updateReady && (isSelecting() || S.phase === 'off')) {
+    location.reload();
+    return;
+  }
   el.power.dataset.pos = S.power;
   el.timeBtn.classList.toggle('active', S.timeLimit > 0 && S.phase !== 'off');
   renderStatus();
@@ -595,10 +602,26 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// オフラインで使えるように Service Worker を登録する（https のときだけ。ローカル確認時は古いキャッシュを避ける）
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+// ---- 更新とオフライン対応（Service Worker） ----
+let updateReady = false;
+const swAllowed = location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname);
+if ('serviceWorker' in navigator && swAllowed) {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((reg) => {
+    // iPhone のホーム画面アプリは、戻ってきても読み込み直さないので、戻るたびに新しい版がないか確かめる
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) reg.update().catch(() => {});
+    });
+  }).catch(() => {});
+  // 新しい版に切り替わったら読み込み直す（出題中なら、選択画面に戻ったときに）
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || updateReady) return;
+    updateReady = true;
+    render();
+  });
 }
+
+$('ver').textContent = `ver.${VERSION}`;
 
 load();
 setEnabled(S.power === 'on');

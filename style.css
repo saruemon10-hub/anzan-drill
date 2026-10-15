@@ -481,3 +481,13 @@ button {
 .clr-btn.pressed { box-shadow: 0 1px 0 var(--face-edge), 0 0 0 5px rgba(255, 255, 255, 0.2), 0 0 0 6px rgba(0, 0, 0, 0.1); }
 .side-time.pressed { transform: translateX(3px); }
 .side-power [data-key].pressed { transform: none; }
+
+/* 版数（右下に小さく） */
+.ver {
+  position: absolute;
+  right: 22px;
+  bottom: 6px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}

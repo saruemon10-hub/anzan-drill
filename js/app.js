@@ -3,6 +3,7 @@ import {
   generateArith, generateKuku, generateMini, makeAnki,
 } from './problems.js';
 import { sfx, unlock, setEnabled } from './sound.js';
+import { say, stopVoice, unlockVoice, setVoiceEnabled, problemSpeech } from './voice.js';
 
 const $ = (id) => document.getElementById(id);
 const el = {
@@ -37,6 +38,9 @@ const MINI_QHINT = { kisoku: 'つぎに くる かずは？', awase: 'あわせ�
 const TIME_STEPS = [0, 10, 5];
 const OK_MS = 550;
 const NG_MS = 1300;
+// 声で答えを言うときは、言い終わるまで次の問題に進まない
+const NG_VOICE_MS = 2100;
+const TIMEOUT_VOICE_MS = 2600;
 const MAX_INPUT = 3;
 const STORE_KEY = 'anzan-drill-settings';
 
@@ -176,6 +180,7 @@ function setPower(pos) {
   const wasOff = S.power === 'off';
   S.power = pos;
   setEnabled(pos === 'on');
+  setVoiceEnabled(pos === 'on');
   if (pos === 'off') {
     cancelTimers();
     lightsOff();
@@ -188,6 +193,7 @@ function setPower(pos) {
       S.problems = [];
       S.retry = false;
       sfx.start();
+      say(selectSpeech(), 300);
     } else {
       sfx.select();
     }
@@ -216,6 +222,7 @@ function onMode(m) {
   // 出題中・結果画面で同じモードを押したときは、設定はそのままで選択画面へ戻る
   S.phase = 'select';
   sfx.select();
+  say(selectSpeech());
   save();
   render();
 }
@@ -225,6 +232,7 @@ function onTime() {
   S.timeLimit = next(TIME_STEPS, S.timeLimit);
   S.notice = S.timeLimit ? `じかんせいげん：1もん ${S.timeLimit}びょう` : 'じかんせいげん：なし';
   sfx.select();
+  say(S.timeLimit ? `じかんせいげん、${S.timeLimit}びょう` : 'じかんせいげん、なし');
   save();
   render();
 }
@@ -234,6 +242,7 @@ function onDigit(d) {
     if (d === '0') return;
     S.dan = Number(d);
     sfx.key();
+    say(`${d}のだん`);
     render();
     return;
   }
@@ -274,12 +283,14 @@ function onOk() {
       lightsOff();
       S.phase = 'select';
       sfx.select();
+      say(selectSpeech());
       render();
     }
     return;
   }
   if (S.phase === 'idle') {
     S.notice = 'さきに モードを えらんでね';
+    say(S.notice);
     render();
   }
 }
@@ -291,6 +302,7 @@ function startGame() {
     if (!S.dan) {
       S.notice = 'すうじで だんを えらんでね';
       sfx.wrong();
+      say(S.notice, 400);
       render();
       return;
     }
@@ -330,6 +342,7 @@ function nextQuestion() {
 
 function beginMemorize() {
   S.phase = 'memorize';
+  say('おぼえてね');
   render();
   const ms = 1000 + 450 * cur().memo.length;
   countdown(ms, { onEnd: beginQuestion });
@@ -337,6 +350,8 @@ function beginMemorize() {
 
 function beginQuestion() {
   S.phase = 'question';
+  const p = cur();
+  say(p.kind === 'anki' ? 'すうじを いれてね' : problemSpeech(p));
   render();
   startLimit();
 }
@@ -361,6 +376,8 @@ function grade(timeout) {
   const p = cur();
   const ok = !timeout && S.input === p.answer;
   S.last = { ok, timeout };
+  stopVoice();
+  let wait = OK_MS;
   if (ok) {
     S.correct++;
     light('ok');
@@ -370,10 +387,14 @@ function grade(timeout) {
     S.wrong.push(p);
     light('ng');
     sfx.wrong();
+    // ブブーのあとに正しい答えを言う（あんきは 1 けたずつ）
+    const answer = p.kind === 'anki' ? p.answer.split('').join('、') : p.answer;
+    say(`${timeout ? 'じかんぎれ。' : ''}こたえは ${answer}`, 450);
+    wait = S.power !== 'on' ? NG_MS : timeout || p.kind === 'anki' ? TIMEOUT_VOICE_MS : NG_VOICE_MS;
   }
   S.phase = 'feedback';
   render();
-  later(ok ? OK_MS : NG_MS, () => {
+  later(wait, () => {
     S.idx++;
     if (S.idx < S.problems.length) nextQuestion();
     else showResult();
@@ -384,13 +405,24 @@ function showResult() {
   lightsOff();
   setBar(null);
   S.phase = 'result';
+  const score = Math.round((100 * S.correct) / S.problems.length);
   if (S.wrong.length === 0) {
     el.light.classList.add('blink');
     sfx.fanfare();
+    say(S.retry ? 'ぜんぶ できたね！' : `ぜんもん せいかい！ ${score}てん！`, 1300);
   } else {
     sfx.finish();
+    say(`${score}てん。まちがえた もんだいを もういちど やってみよう`, 700);
   }
   render();
+}
+
+// 選択画面で話す案内
+function selectSpeech() {
+  if (!S.mode) return 'モードを えらんでね';
+  if (S.mode === 'mul') return `かけざん、${KUKU_NAME[S.kukuMenu]}`;
+  if (S.mode === 'mini') return MINI_NAME[S.mini];
+  return `${MODE_NAME[S.mode]}、レベル${S.level}`;
 }
 
 // ---- 表示 ----
@@ -521,9 +553,12 @@ for (const btn of keyEls) {
   btn.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
-// iOS は touchend / click の中でしか音を有効にできないため、ここでも unlock する
+// iOS は touchend / click の中でしか音と声を有効にできないため、ここで unlock する
 for (const type of ['touchend', 'pointerup', 'click']) {
-  document.addEventListener(type, unlock, { passive: true });
+  document.addEventListener(type, () => {
+    unlock();
+    unlockVoice();
+  }, { passive: true });
 }
 // ピンチ拡大・ダブルタップ拡大・スクロールのはね返りを防ぐ
 document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -543,6 +578,7 @@ document.addEventListener('keydown', (e) => {
   e.preventDefault();
   unlock();
   press(key);
+  unlockVoice();
 });
 
 // アプリが裏に回ったら制限時間を止め、戻ったらその問題の時間を最初から数え直す
@@ -566,4 +602,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 
 load();
 setEnabled(S.power === 'on');
+setVoiceEnabled(S.power === 'on');
 render();
